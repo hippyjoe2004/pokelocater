@@ -323,7 +323,8 @@ def heartbeat(api_endpoint, access_token, response, login_type):
     return heartbeat
 
 def main(location=None):
-    
+
+    steps = os.environ.get('STEPS', 1)
     pokemons = json.load(open('api/pokemon.json'))
     ptc_username = os.environ.get('PTC_USERNAME', "Invalid")
     ptc_password = os.environ.get('PTC_PASSWORD', "Invalid")
@@ -403,9 +404,7 @@ def main(location=None):
     nearby_pokes = []
 
     origin = LatLng.from_degrees(FLOAT_LAT, FLOAT_LONG)
-    print "origin", FLOAT_LAT, FLOAT_LONG
-    
-    for i in range(5):
+    for step in range(steps):
         original_lat = FLOAT_LAT
         original_long = FLOAT_LONG
         parent = CellId.from_lat_lng(LatLng.from_degrees(FLOAT_LAT, FLOAT_LONG)).parent(15)
@@ -458,25 +457,14 @@ def main(location=None):
                 "longitude": poke.Longitude,
                 "time_left": poke.TimeTillHiddenMs / 1000,
                 "distance": int(origin.get_distance(other).radians * 6366468.241830914),
-                "direction": direction
+                "direction": direction,
+                "step": step+1
             })
 
-            print("(%s) %s is visible at (%s, %s) for %s seconds (%sm %s from you)" % (poke.pokemon.PokemonId, pokemons[poke.pokemon.PokemonId - 1]['Name'], poke.Latitude, poke.Longitude, poke.TimeTillHiddenMs / 1000, int(origin.get_distance(other).radians * 6366468.241830914), direction))
-            
         print('')
-        
-        if i == 0:
-            print "cross 1", original_lat-0.002, original_long
-            set_location_coords(original_lat-0.002, original_long, 0)
-        if i == 1:
-            print "cross 2", original_lat+0.002, original_long-0.002
-            set_location_coords(original_lat+0.002, original_long-0.002, 0)
-        if i == 2:
-            print "cross 3", original_lat+0.002, original_long+0.002
-            set_location_coords(original_lat+0.002, original_long+0.002, 0)
-        if i == 3:
-            print "cross 4", original_lat-0.002, original_long+0.002
-            set_location_coords(original_lat-0.002, original_long+0.002, 0)
+        walk = getNeighbors()  
+        next = LatLng.from_point(Cell(CellId(walk[2])).get_center())
+        set_location_coords(next.lat().degrees, next.lng().degrees, 0) 
 
     return nearby_pokes
 
